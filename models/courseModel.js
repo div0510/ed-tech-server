@@ -1,4 +1,5 @@
 const mongoose = require('mongoose')
+const {modelConstants} = require("../utils/constants");
 const CourseSchema = new mongoose.Schema({
     courseName: {
         type: String,
@@ -12,21 +13,22 @@ const CourseSchema = new mongoose.Schema({
     },
     instructor: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
+        ref: modelConstants.user,
         required: true
     },
     whatYouWillLearn: {
         type: String,
-    }, courseContent: [
+    },
+    courseContent: [
         {
             type: mongoose.Schema.Types.ObjectId,
-            ref: 'Section'
+            ref: modelConstants.section
         }
     ],
     ratingAndReviews: [
         {
             type: mongoose.Schema.Types.ObjectId,
-            ref: 'RatingAndReview'
+            ref: modelConstants.ratingAndReview
         }
 
     ],
@@ -36,21 +38,31 @@ const CourseSchema = new mongoose.Schema({
     },
     thumbnail: {
         type: String,
-        trim: true,
         required: true
     },
-    tag: {
+    category: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Tag'
+        ref: modelConstants.category
+    },
+    tag: {
+        type: [String],
+        required: true
     },
     studentsEnrolled: [
         {
             type: mongoose.Schema.Types.ObjectId,
             required: true,
-            ref: 'User'
+            ref: modelConstants.user
         }
 
-    ]
+    ],
+    instructions: {
+        type: [String],
+    },
+    status: {
+        type: String,
+        enum: ["Draft", "Published"],
+    },
 })
 
-module.exports = mongoose.model('Course', CourseSchema)
+module.exports = mongoose.model(modelConstants.courses, CourseSchema)

@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const {modelConstants} = require("../utils/constants");
 const userSchema = new mongoose.Schema({
     firstName: {
         type: String,
@@ -25,15 +26,23 @@ const userSchema = new mongoose.Schema({
         required: true,
         enum: ['Admin', 'Student', 'Instructor'],
     },
+    active: {
+        type: Boolean,
+        default: true,
+    },
+    approved: {
+        type: Boolean,
+        default: true,
+    },
     additionalDetails: {
         type: mongoose.Schema.Types.ObjectId,
         required: true,
-        ref: 'Profile'
+        ref: modelConstants.profile
     },
     courses: [
         {
             type: mongoose.Schema.Types.ObjectId,
-            ref: 'Course'
+            ref: modelConstants.courses
         }
     ],
     image: {
@@ -41,8 +50,7 @@ const userSchema = new mongoose.Schema({
         required: true
     },
     token: {
-        type: String,
-
+        type: String
     },
     resetPasswordExpires: {
         type: Date,
@@ -50,9 +58,9 @@ const userSchema = new mongoose.Schema({
     courseProgress: [
         {
             type: mongoose.Schema.Types.ObjectId,
-            ref: 'CourseProgress'
+            ref: modelConstants.courseProgress
         }
     ]
-})
+}, {timestamps: true});
 
-module.exports = mongoose.model("User", userSchema);
+module.exports = mongoose.model(modelConstants.user, userSchema);

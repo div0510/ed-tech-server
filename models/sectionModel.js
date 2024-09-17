@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const {modelConstants} = require("../utils/constants");
 const SectionSchema = new mongoose.Schema({
     sectionName: {
         type: String,
@@ -6,10 +7,10 @@ const SectionSchema = new mongoose.Schema({
     subSection: [
         {
             type: mongoose.Schema.Types.ObjectId,
-            ref: 'SubSection',
+            ref: modelConstants.subSection,
             required: true
         }
     ]
 })
 
-module.exports = mongoose.model('Section', SectionSchema);
+module.exports = mongoose.model(modelConstants.section, SectionSchema);

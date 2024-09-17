@@ -1,5 +1,7 @@
 const mongoose = require('mongoose');
 const mailSender = require("../utils/mailSender");
+const emailTemplate = require("../mail/templates/emailVerificationTemplate");
+const {modelConstants} = require("../utils/constants");
 const OTPSchema = new mongoose.Schema({
     email: {
         type: String,
@@ -18,7 +20,7 @@ const OTPSchema = new mongoose.Schema({
 
 async function sendVerificationEmail(email, otp) {
     try {
-        const mailResponse = await mailSender(email, "Verification Email from study Notion", otp);
+        const mailResponse = await mailSender(email, "Verification Email from study Notion", emailTemplate(otp));
         console.log("Email Sent Successfully :: ", mailResponse);
     } catch (err) {
         console.error("Error in send Verification Email :: ", err);
@@ -27,8 +29,11 @@ async function sendVerificationEmail(email, otp) {
 }
 
 OTPSchema.pre("save", async function (next) {
-    await  sendVerificationEmail(this.email, this.otp);
+    console.log("New otp document saved to database");
+    if (this.isNew) {
+        await sendVerificationEmail(this.email, this.otp);
+    }
     next();
 
 })
-module.exports = mongoose.model('OTP', OTPSchema);
+module.exports = mongoose.model(modelConstants.OTP, OTPSchema);

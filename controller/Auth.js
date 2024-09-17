@@ -1,17 +1,21 @@
+const bcrypt = require("bcrypt");
 const User = require('../models/userModel');
 const OTP = require('../models/OTPModel');
 const otpGenerator = require('otp-generator');
-const bcrypt = require("bcrypt");
 const Profile = require('../models/profileModel');
 const jwt = require('jsonwebtoken');
+const mailSender = require("../utils/mailSender");
+const {passwordUpdated} = require("../mail/templates/passwordUpdate");
 require('dotenv').config();
+
+
 //send OTP
 exports.sendOTP = async (req, res) => {
     try {
         // fetch email from req body
         const {email} = req.body;
         // Checks if user exist in db
-        const checkUserExist = await User.findOne({email: email});
+        const checkUserExist = await User.findOne({email});
 // if exists return response
         if (checkUserExist) {
             return res.status(401).json({
@@ -24,7 +28,7 @@ exports.sendOTP = async (req, res) => {
             upperCaseAlphabets: false,
             lowerCaseAlphabets: false,
             specialChars: false,
-            digits: true
+            // digits: true
         });
         console.log("Otp GEnerated :: ", otp);
 
@@ -73,7 +77,7 @@ exports.signUp = async (req, res) => {
             otp
         } = req.body;
 // check empty fields
-        if (!firstName || !lastName || !email || !password || !confirmPassword) {
+        if (!firstName || !lastName || !email || !password || !confirmPassword || !otp) {
             return res.status(403).json({
                 success: false,
                 message: 'Please enter all details'
@@ -89,16 +93,16 @@ exports.signUp = async (req, res) => {
         }
 
         // check user existence
-        const checkUserExists = await User.findOne({email: email})
+        const checkUserExists = await User.findOne({email})
         if (checkUserExists) {
             return res.status(403).json({
                 success: false,
-                message: 'User already exists'
+                message: 'User already exists. Please sign in to continue.'
             })
         }
 
         // find recent otp
-        const recentOtp = await OTP.findOne({email: email}).sort({createdAt: -1}).limit(1)
+        const recentOtp = await OTP.find({email}).sort({createdAt: -1}).limit(1);
         console.log("Recent Otp", recentOtp);
         //validate OTP
         if (recentOtp.length === 0) {
@@ -106,25 +110,34 @@ exports.signUp = async (req, res) => {
                 success: false,
                 message: 'Otp Not Found'
             })
-        } else if (otp !== recentOtp.otp) {
+        } else if (otp !== recentOtp[0].otp) {
             return res.status(403).json({
                 success: false,
                 message: 'INVALID Otp '
             })
         }
+        // Hash the password
         const hashedPassword = await bcrypt.hash(password, 10)
+        // Create the user
+        let approved = "";
+        approved === "Instructor" ? (approved = false) : (approved = true);
+
+        // Create the Additional Profile For User
         const profileDetails = await Profile.create({
             gender: null,
             dateOfBirth: null,
             about: null,
             contactNumber: null,
         })
+
         const user = await User.create({
             firstName,
             lastName,
-            email, contactNumber,
+            email,
+            contactNumber,
             password: hashedPassword,
-            accountType,
+            accountType: accountType,
+            approved: approved,
             additionalDetails: profileDetails._id,
             image: `https://api.dicebear.com/5.x/initials/svg?seed=${firstName} ${lastName}`,
 
@@ -144,6 +157,7 @@ exports.signUp = async (req, res) => {
     }
 }
 
+//login
 exports.login = async (req, res) => {
     try {
         const {email, password} = req.body;
@@ -160,13 +174,14 @@ exports.login = async (req, res) => {
                 message: 'User does not exist. Please Signup'
             })
         }
+
+        // Generate JWT token and Compare Password
         if (await bcrypt.compare(password, user.password)) {
-            const payload = {
-                email: user.email,
-                accountType: user.accountType,
-                id: user._id
-            }
-            const token = jwt.sign(payload, process.env.JWT_SECRET, {expiresIn: "2h"})
+            const token = jwt.sign(
+                {email: user.email, id: user._id, accountType: user.accountType},
+                process.env.JWT_SECRET,
+                {expiresIn: "2h"});
+
             user.token = token
             user.password = undefined
             const options = {
@@ -175,7 +190,7 @@ exports.login = async (req, res) => {
             }
             res.cookie("token", token, options).status(200).json({
                 success: true,
-                message: 'Login successfull',
+                message: 'Login successful',
                 token,
                 user
             })
@@ -197,11 +212,74 @@ exports.login = async (req, res) => {
 }
 
 //change Password
-exports.exchangePassword = async (req, res) => {
-//     get date from req body
-    // get oldPassword newPassword confirmPassword
-    //validation
-    // update pwd in db
-    // send mail password updated
-    // return response
+exports.changePassword = async (req, res) => {
+    try {
+        //     get data from req body
+        const userDetails = await User.findById(req.user.id);
+
+        const {oldPassword, newPassword, confirmPassword} = req.body;
+
+        const isPasswordMatch = await bcrypt.compare(
+            oldPassword,
+            userDetails.password
+        );
+        if (!isPasswordMatch) {
+            // If old password does not match, return a 401 (Unauthorized) error
+            return res
+                .status(401)
+                .json({success: false, message: "The password is incorrect"});
+        }
+
+        if (newPassword !== confirmPassword) {
+            return res.status(401).json({
+                success: false,
+                message: 'New password and confirm password do not match'
+            })
+        }
+        // get oldPassword newPassword confirmPassword
+        // const userDetails = User.findOne({email: email});
+        if (!userDetails) {
+            return res.status(401).json({
+                success: false,
+                message: 'User does not exist'
+            })
+        }
+        // const compareResult =  bcrypt.compare(newPassword, userDetails.password);
+        // if (compareResult) {
+        //     return res.status(401).json({
+        //         success: false,
+        //         message: 'Password changed successfull',
+        //     })
+        // }
+
+        //validation
+        // const updatedUserDetails = await  User.findByIdAndUpdate({})
+
+        const encryptedPassword = await bcrypt.hash(newPassword, 10)
+        const updatedUserDetails = await User.findByIdAndUpdate(
+            req.user.id,
+            {password: encryptedPassword},
+            {new: true}
+        );
+
+        const emailResponse = await mailSender(updatedUserDetails.email, passwordUpdated(
+            updatedUserDetails.email,
+            `Password updated successfully for ${updatedUserDetails.firstName} ${updatedUserDetails.lastName}`
+        ));
+        console.log("Email sent successfully:", emailResponse.response);
+        return res.status(200).json({
+            success: true,
+            message: 'Password changed successfully'
+        })
+        // update pwd in db
+        // send mail password updated
+        // return response
+    } catch (err) {
+        console.log("Error in changePassword :: ", err)
+        return res.status(500).json({
+            success: false,
+            message: `Error in changePassword :: ${err.message}`,
+        })
+    }
+
 }

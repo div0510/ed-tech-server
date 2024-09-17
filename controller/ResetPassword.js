@@ -15,13 +15,16 @@ exports.resetPasswordToken = async (req, res) => {
         }
 
         //generate token with expiration time
-        const token = crypto.randomUUID();
+        const token = crypto.randomBytes(20).toString("hex");
+        ;
 // update user with expiretoken
         const updatedDetails = await User.findOneAndUpdate({email: email}, {
             token: token,
-            resetPasswordExpires: Date.now() + 5 * 60 * 1000
+            resetPasswordExpires: Date.now() + 3600000
         }, {new: true})
+        console.log("Details :: ", updatedDetails)
         // create url
+
         const url = `https://localhost:3000/update-password/${token}`
         // send mail
         await mailSender(email, "Password Reset Link", `Password reset link : ${url}`)
@@ -49,7 +52,7 @@ exports.resetPassword = async (req, res) => {
                 message: 'Please enter all details in reset password'
             })
 
-        } else if (!password || !confirmPassword) {
+        } else if (password !== confirmPassword) {
             return res.status(403).json({
                 success: false,
                 message: 'Password and confirm password do not match'
@@ -64,7 +67,7 @@ exports.resetPassword = async (req, res) => {
             })
         }
 
-        if (userDetails.resetPasswordExpires < Date.now()) {
+        if (!(userDetails.resetPasswordExpires > Date.now())) {
             return res.status(403).json({
                 success: false,
                 message: 'Password reset Token expired. Please regenerate one'
