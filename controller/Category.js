@@ -43,55 +43,87 @@ exports.showAllCategories = async (req, res) => {
     }
 }
 
+// exports.categoryPageDetails = async (req, res) => {
+//     try {
+//         const {categoryId} = req.body;
+//         const selectedCategory = await Category.findById(categoryId).populate(modelConstants.courses).exec();
+//         console.log(`Selected Category :: ${selectedCategory}`);
+//
+//         if (!selectedCategory) {
+//             console.log("Selected Category not found");
+//             return res.status(404).send({
+//                 success: false,
+//                 message: 'Category not found'
+//             })
+//         }
+//
+//         if (selectedCategory.courses.length === 0) {
+//             console.log("No courses found for selected category");
+//             return res.status(404).send({
+//                 success: false,
+//                 message: 'No courses found for selected category'
+//             })
+//         }
+//
+//         const selectedCourses = selectedCategory.courses;
+//
+//         // Get courses for other categories
+//         const categoriesExceptSelected = await Category.find({
+//             _id: {$ne: categoryId}
+//         }).populate(modelConstants.courses);
+//         let differentCourses = [];
+//         for (const category of categoriesExceptSelected) {
+//             differentCourses.push(...category.courses);
+//         }
+//
+//         // Get top-selling courses across all categories
+//         const allCategories = await Category.find().populate(modelConstants.courses);
+//         const allCourses = allCategories.flatMap((category) => category.courses);
+//         const mostSellingCourses = allCourses
+//             .sort((a, b) => b.sold - a.sold)
+//             .slice(0, 10);
+//
+//         return res.status(200).json({
+//             success: true,
+//             selectedCourses: selectedCourses,
+//             differentCourses: differentCourses,
+//             mostSellingCourses: mostSellingCourses,
+//         })
+//
+//     } catch (err) {
+//         console.log("Error in categoryPageDetails :: ", err);
+//         return res.status(500).json({
+//             status: false,
+//             message: `Error in categoryPageDetails :: ${err.message}`,
+//         })
+//     }
+// }
+
 exports.categoryPageDetails = async (req, res) => {
     try {
         const {categoryId} = req.body;
         const selectedCategory = await Category.findById(categoryId).populate(modelConstants.courses).exec();
-        console.log(`Selected Category :: ${selectedCategory}`);
-
         if (!selectedCategory) {
-            console.log("Selected Category not found");
+            console.log("category not found in categoryPageDetails :: ");
             return res.status(404).send({
-                success: false,
+                status: false,
                 message: 'Category not found'
             })
         }
 
-        if (selectedCategory.courses.length === 0) {
-            console.log("No courses found for selected category");
-            return res.status(404).send({
-                success: false,
-                message: 'No courses found for selected category'
-            })
-        }
-
-        const selectedCourses = selectedCategory.courses;
-
-        // Get courses for other categories
-        const categoriesExceptSelected = await Category.find({
-            _id: {$ne: categoryId}
-        }).populate(modelConstants.courses);
-        let differentCourses = [];
-        for (const category of categoriesExceptSelected) {
-            differentCourses.push(...category.courses);
-        }
-
-        // Get top-selling courses across all categories
-        const allCategories = await Category.find().populate(modelConstants.courses);
-        const allCourses = allCategories.flatMap((category) => category.courses);
-        const mostSellingCourses = allCourses
-            .sort((a, b) => b.sold - a.sold)
-            .slice(0, 10);
-
+        const differentCategories = await Category.find({_id: {$ne: categoryId}}).populate(modelConstants.courses).exec();
+//todo get top 10 selling courses
         return res.status(200).json({
             success: true,
-            selectedCourses: selectedCourses,
-            differentCourses: differentCourses,
-            mostSellingCourses: mostSellingCourses,
+            message: 'Category Details found successfully!',
+            data: {
+                selectedCategory,
+                differentCategories,
+            }
         })
 
+
     } catch (err) {
-        console.log("Error in categoryPageDetails :: ", err);
         return res.status(500).json({
             status: false,
             message: `Error in categoryPageDetails :: ${err.message}`,

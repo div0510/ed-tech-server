@@ -6,6 +6,7 @@ const Profile = require('../models/profileModel');
 const jwt = require('jsonwebtoken');
 const mailSender = require("../utils/mailSender");
 const {passwordUpdated} = require("../mail/templates/passwordUpdate");
+const {modelConstants} = require("../utils/constants");
 require('dotenv').config();
 
 
@@ -41,7 +42,7 @@ exports.sendOTP = async (req, res) => {
                 specialChars: false,
                 digits: true
             });
-            result = await OTP.findOne({otp: otp});
+            result = await OTP.findOne({otp: otp}); //todo check for this line at testing
         }
 
         const otpPayload = {email, otp};
@@ -103,7 +104,7 @@ exports.signUp = async (req, res) => {
 
         // find recent otp
         const recentOtp = await OTP.find({email}).sort({createdAt: -1}).limit(1);
-        console.log("Recent Otp", recentOtp);
+        console.log("Recent Otp ::", recentOtp);
         //validate OTP
         if (recentOtp.length === 0) {
             return res.status(403).json({
@@ -167,7 +168,7 @@ exports.login = async (req, res) => {
                 message: 'Please enter all details. Please try again'
             })
         }
-        const user = User.findOne({email}).populate('additionalDetails');
+        const user = User.findOne({email}).populate(modelConstants.additionalDetails);
         if (!user) {
             return res.status(401).json({
                 success: false,
@@ -178,14 +179,14 @@ exports.login = async (req, res) => {
         // Generate JWT token and Compare Password
         if (await bcrypt.compare(password, user.password)) {
             const token = jwt.sign(
-                {email: user.email, id: user._id, accountType: user.accountType},
+                {email: user.email, id: user._id, role: user.role},
                 process.env.JWT_SECRET,
                 {expiresIn: "2h"});
 
             user.token = token
             user.password = undefined
             const options = {
-                expires: new Date(Date.now() + 3 * 34 * 60 * 1000),
+                expires: new Date(Date.now() + 3 * 24  * 60 * 60 * 1000),
                 httponly: true
             }
             res.cookie("token", token, options).status(200).json({

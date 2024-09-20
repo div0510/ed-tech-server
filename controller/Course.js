@@ -26,7 +26,7 @@ exports.createCourse = async (req, res) => {
 
         //check for instructor
 
-        const instructorDetails = await User.findById(userId,{accountType: "Instructor"});
+        const instructorDetails = await User.findById(userId, {accountType: "Instructor"});
         console.log("Instructor Details :: ", instructorDetails);
         if (!instructorDetails) {
             return res.status(400).send({
@@ -50,8 +50,8 @@ exports.createCourse = async (req, res) => {
         console.log("Thumbnail Image :: ", thumbnailImage)
         // creat entry for course
         const newCourse = await Course.create({
-             courseName,
-             courseDescription,
+            courseName,
+            courseDescription,
             instructor: instructorDetails._id,
             whatYouWillLearn: whatYouWillLearn,
             price,
@@ -121,6 +121,42 @@ exports.showAllCourses = async (req, res) => {
         return res.status(500).send({
             success: false,
             message: `Error in getting All Courses :: ${err.message}`,
+        })
+    }
+}
+
+exports.getCourseDetails = async (req, res) => {
+    try {
+        const {courseId} = req.body;
+        const courseDetails = await Course.find({_id: courseId})
+            .populate({
+                path: modelConstants.instructor,
+                populate: {path: modelConstants.additionalDetails},
+            })
+            .populate(modelConstants.category)
+            .populate(modelConstants.ratingAndReview)
+            .populate({
+                path: "courseContent",
+                populate: {path: modelConstants.subSection}
+            }).exec();
+
+        if (!courseDetails) {
+            return res.status(404).json({
+                status: false,
+                message: 'Course Details not found'
+            })
+        }
+        return res.status(200).send({
+            status: true,
+            message: 'Course Details found!',
+            data: courseDetails,
+        })
+
+    } catch (err) {
+        console.log("Error in getting courseDetails :: ", err);
+        res.status(500).json({
+            status: false,
+            message: `Error in getting CourseDetails :: ${err.message}`,
         })
     }
 }

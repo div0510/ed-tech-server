@@ -30,7 +30,6 @@ const CourseSchema = new mongoose.Schema({
             type: mongoose.Schema.Types.ObjectId,
             ref: modelConstants.ratingAndReview
         }
-
     ],
     price: {
         type: Number,
@@ -54,7 +53,6 @@ const CourseSchema = new mongoose.Schema({
             required: true,
             ref: modelConstants.user
         }
-
     ],
     instructions: {
         type: [String],

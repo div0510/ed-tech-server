@@ -1,6 +1,7 @@
 const Profile = require('../models/profileModel');
 const User = require('../models/userModel');
 const {modelConstants} = require("../utils/constants");
+const {uploadImageToCloudinary} = require("../utils/imageUploader");
 exports.updateProfile = async (req, res) => {
     try {
         const {dateOfBirth = "", about = "", gender, contactNumber} = req.body;
@@ -82,6 +83,57 @@ exports.getAllUserDetails = async (req, res) => {
         res.status(500).json({
             success: false,
             message: `Error in getAllUsersDetails : ${err.message}`
+        })
+    }
+}
+
+exports.updateDisplayPicture = async (req, res) => {
+    try {
+        const displayPicture = req.files.displayPicture
+        const userId = req.user.id
+
+        const image = await uploadImageToCloudinary(displayPicture, process.env.FOLDER_NAME, 1000, 1000);
+        console.log("Display Picture :: ", image);
+
+        const updatedProfile = await User.findByIdAndUpdate({_id: userId}, {
+            image: image.secure_url,
+        }, {new: true});
+
+        return res.status(200).json({
+            status: true,
+            message: 'Profile updated successfully',
+            data: updatedProfile
+        })
+
+    } catch (err) {
+        res.status(500).json({
+            success: false,
+            message: 'Error updating display picture',
+        })
+    }
+}
+
+exports.getEnrolledCourses = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const userDetails = await User.findById(userId).populate(modelConstants.courses).exec();
+        if (!userDetails) {
+            return res.status(400).send({
+                success: false,
+                message: 'User does not exist'
+            })
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: 'Enrolled Courses Found successfully',
+            data: userDetails.courses,
+        })
+
+    } catch (err) {
+        res.status(500).json({
+            success: false,
+            message: `Error in getEnrolledCourses :: ${err.message}`
         })
     }
 }
