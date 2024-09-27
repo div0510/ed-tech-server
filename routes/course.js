@@ -1,4 +1,4 @@
-const express = require('experss');
+const express = require('express');
 const router = express.Router();
 
 const {createCourse, showAllCourses, getCourseDetails} = require('../controller/Course');
