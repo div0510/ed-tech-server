@@ -9,9 +9,17 @@ const {modelConstants} = require("../utils/constants");
 exports.createCourse = async (req, res) => {
     try {
         const userId = req.user.id;
-
+        console.log(`Request in create course :: ${req.body.courseName}`);
         let {courseName, courseDescription, whatYouWillLearn, price, tag, category, status, instructions} = req.body;
-        const {thumbnail} = req.files.thumbnailImage
+        console.log('Course Name:', courseName);
+        console.log('Course Description:', courseDescription);
+        console.log('Price:', price);
+        console.log('Category:', category);
+        console.log('What You Will Learn:', whatYouWillLearn);
+        console.log('Tag:', JSON.parse(tag)); // Tag is a JSON array, so we parse it
+        console.log('Instructions:', JSON.parse(instructions)); // Instructions is a JSON array
+        const thumbnail = req.files.thumbnailImage;
+        console.log('Thumbnail Image:', thumbnail);
         //validation
         if (!courseName || !courseDescription || !whatYouWillLearn || !price || !tag || !category || !thumbnail) {
             return res.status(400).send({
@@ -134,7 +142,7 @@ exports.getCourseDetails = async (req, res) => {
                 populate: {path: modelConstants.additionalDetails},
             })
             .populate(modelConstants.category)
-            .populate(modelConstants.ratingAndReview)
+            // .populate(modelConstants.ratingAndReview)
             .populate({
                 path: "courseContent",
                 populate: {path: modelConstants.subSection}

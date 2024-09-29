@@ -13,7 +13,7 @@ const {
 //                                      Profile routes
 // ********************************************************************************************************
 // Delete User Account
-router.post('/deleteProfile', deleteAccount);
+router.delete('/deleteProfile', auth, deleteAccount);
 router.put('/updateProfile', auth, updateProfile);
 router.get('/getAllUserDetails', auth, getAllUserDetails);
 

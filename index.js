@@ -12,7 +12,7 @@ const {cloudConnect} = require('./config/cloudinary');
 const fileUpload = require('express-fileupload');
 const dotenv = require('dotenv');
 dotenv.config();
-const port = process.env.PORT || 8081;
+const port = process.env.PORT || 8081 || 4000;
 
 database.connect();
 
@@ -30,12 +30,12 @@ app.use(fileUpload({useTempFiles: true, tempFileDir: '/tmp'}));
 
 // cloudinary connect
 cloudConnect();
-app.use((req, res, next) => {
-    console.log("req.url :: ", req.url);
-    console.log("req.body :: ", req.body);
-    console.log("req.cookies :: ", req.cookies);
-    next();
-});
+// app.use((req, res, next) => {
+//     console.log("req.url :: ", req.url);
+//     console.log("req.body :: ", req.body);
+//     console.log("req.cookies :: ", req.cookies);
+//     next();
+// });
 //
 app.use("/api/v1/auth", userRoutes);
 app.use("/api/v1/profile", profileRoutes);
@@ -56,6 +56,4 @@ app.get("*", (req, res) => {
 app.listen(port, () => {
     // console.log("APP is running at ", port);
     console.log(`Server running at http://localhost:${port}`)
-
-
 })

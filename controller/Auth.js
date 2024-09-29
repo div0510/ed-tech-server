@@ -168,7 +168,7 @@ exports.login = async (req, res) => {
                 message: 'Please enter all details. Please try again'
             })
         }
-        const user = User.findOne({email}).populate(modelConstants.additionalDetails);
+        const user = await User.findOne({email}).populate(modelConstants.additionalDetails).exec();
         if (!user) {
             return res.status(401).json({
                 success: false,
@@ -179,7 +179,7 @@ exports.login = async (req, res) => {
         // Generate JWT token and Compare Password
         if (await bcrypt.compare(password, user.password)) {
             const token = jwt.sign(
-                {email: user.email, id: user._id, role: user.role},
+                {email: user.email, id: user._id, accountType: user.accountType},
                 process.env.JWT_SECRET,
                 {expiresIn: "2h"});
 

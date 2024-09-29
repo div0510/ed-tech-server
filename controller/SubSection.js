@@ -17,12 +17,14 @@ exports.createSubSection = async (req, res) => {
         }
 
         const uploadDetails = await uploadImageToCloudinary(video, process.env.FOLDER_NAME);
-        const subSectionDetails = new SubSection.create({
+        console.log("Upload Details:", uploadDetails);
+        const subSectionDetails = await SubSection.create({
             title: title,
             timeDuration: `${uploadDetails.duration}`,
             description: description,
             video: uploadDetails.secure_url,
         });
+        console.log("Subsection Details :: ",subSectionDetails);
         const sectionUpdatedDetails = await Section.findByIdAndUpdate(
             {_id: sectionId},
             {

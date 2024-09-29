@@ -2,6 +2,7 @@ const Profile = require('../models/profileModel');
 const User = require('../models/userModel');
 const {modelConstants} = require("../utils/constants");
 const {uploadImageToCloudinary} = require("../utils/imageUploader");
+const {scheduleJob} = require("node-schedule");
 exports.updateProfile = async (req, res) => {
     try {
         const {dateOfBirth = "", about = "", gender, contactNumber} = req.body;
@@ -14,10 +15,20 @@ exports.updateProfile = async (req, res) => {
         }
         const userDetails = await User.findById(id);
         const profileDetails = await Profile.findById(userDetails.additionalDetails);
-        profileDetails.dateOfBirth = dateOfBirth;
-        profileDetails.about = about;
-        profileDetails.gender = gender;
-        profileDetails.contactNumber = contactNumber;
+        // profileDetails.dateOfBirth = dateOfBirth === "" ? profileDetails.dateOfBirth : dateOfBirth;
+        // profileDetails.about = about === "" ? profileDetails.about : about;
+        // profileDetails.gender = gender === "" ? profileDetails.gender : gender;
+        // profileDetails.contactNumber = contactNumber === "" ? profileDetails.contactNumber : contactNumber;
+
+        // Merge only non-empty values from req.body with existing profile details
+        const updatedProfileDetails = {
+            ...profileDetails._doc,  // Current profile details from the DB
+            ...(dateOfBirth && {dateOfBirth}),
+            ...(about && {about}),
+            ...(gender && {gender}),
+            ...(contactNumber && {contactNumber}),
+        };
+        Object.assign(profileDetails, updatedProfileDetails);
         await profileDetails.save();
         return res.status(200).json({
             status: true,
@@ -36,10 +47,10 @@ exports.updateProfile = async (req, res) => {
 //delete account
 exports.deleteAccount = async (req, res) => {
     try {
-        const job = schedule.scheduleJob("10 * * * * *", function () {
-            console.log("The answer to life, the universe, and everything!");
-        });
-        console.log("Cron JOB for delete account ::", job);
+        // const job = scheduleJob("10 * * * * *", function () {
+        //     console.log("The answer to life, the universe, and everything!");
+        // });
+        // console.log("Cron JOB for delete account ::", job);
         const id = req.user.id;
         const userDetails = await User.findById(id);
         if (!userDetails) {
@@ -63,6 +74,7 @@ exports.deleteAccount = async (req, res) => {
         })
     }
 }
+
 exports.getAllUserDetails = async (req, res) => {
     try {
         const id = req.user.id;
